@@ -125,10 +125,6 @@ const PlaySequenceScreen = ({route}) => {
     }
   },[]);
 
-  const playSequence = async () => {
-    
-  }
-
   return (
     <View style={{flex: 1}}>
       <Text>Sequence Key: {route.params.sequenceKey}</Text>
@@ -137,7 +133,7 @@ const PlaySequenceScreen = ({route}) => {
       <ScrollView>
         {sequenceElements}
       </ScrollView>
-      <Button title="Play Sequence" onPress={playSequence}/>
+      <Button title="Play Sequence" onPress={()=>{}}/>
     </View>
   );
 
