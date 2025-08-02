@@ -119,12 +119,14 @@ const PlaySequenceScreen = ({route}) => {
 
   React.useEffect(() => {
     async function fetchSequence() {
+      //fetch data from AsyncStorage
       const sequenceJSON = await AsyncStorage.getItem(route.params.sequenceKey);
       if(sequenceJSON) {
         setSequence(JSON.parse(sequenceJSON));
       } else {
         setSequence({"name": "Unknown Sequence", "tempi": [], "beatsPerBar": [], "bars": []});
       }
+      //use const as setSequence needs time to update sequence state
       const sequenceData = JSON.parse(sequenceJSON || '{"name": "Unknown Sequence", "tempi": [], "beatsPerBar": [], "bars": []}');
       if (sequenceData.tempi.length > 0) {
         for (let i = 0; i < sequenceData.tempi.length; i++) {
@@ -158,11 +160,61 @@ const PlaySequenceScreen = ({route}) => {
 
 }
 
-const ViewSequencesScreen = () => {
+const ViewSequencesScreen = ({navigation}) => {
+
+  const [sequences, setSequences] = React.useState<any[]>([]);
+  const [sequencesElements, setSequencesElements] = React.useState<React.ReactElement[]>([]);
+
+  async function fetchAllSequences() {
+    const keys = await AsyncStorage.getAllKeys();
+    const sequencesJSON = await AsyncStorage.multiGet(keys);
+    const sequencesArray = sequencesJSON.map(([key, value]) => {
+      return {key, value: JSON.parse(value || '{}')};
+    });
+    setSequences(sequencesArray);
+    if (sequencesArray.length > 0) {
+      const elements = sequencesArray.map((seq, i) => (
+        <View style={styles.sequencesViewContainer} key={(i + 1).toString()}>
+          <Text>Sequence Name: {seq.value.name}</Text>
+          <Button title="Play Sequence" onPress={()=>playSequence(seq)}/>
+          <Button title="Delete Sequence" onPress={async () => await deleteSequence(seq.key)}/>
+        </View>
+      ));
+      setSequencesElements(elements);
+    } else {
+      setSequencesElements([<Text key={(-1).toString()}>Failed to load sequences: no sequences found.</Text>]);
+    }
+  }
+
+  const playSequence = (seq: any) => {
+    navigation.navigate("Play Sequence", {sequenceKey: seq.value.name});
+  }
+
+  const deleteSequence = async (key: string) => {
+    await AsyncStorage.removeItem(key);
+    Alert.alert("Sequence Deleted", `Sequence with key ${key} has been deleted.`);
+    fetchAllSequences();
+  }
+
+  const deleteAllSequences = async () => {
+    await AsyncStorage.clear();
+    Alert.alert("All sequences deleted.","All data cleared from AsyncStorage.");
+    setSequences([]);
+    setSequencesElements([]);
+  }
+
+  React.useEffect(() => {
+    fetchAllSequences();
+  }, []);
 
   return (
     <View style={{flex: 1}}>
       <Text>Existing Sequences:</Text>
+      <Text>Total Sequences: {sequences.length}</Text>
+      <ScrollView>
+        {sequencesElements}
+      </ScrollView>
+      <Button title="Delete All Sequences" onPress={deleteAllSequences}/>
     </View>
   );
 
