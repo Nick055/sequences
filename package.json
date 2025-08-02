@@ -17,6 +17,7 @@
     "expo": "^53.0.20",
     "react": "19.1.0",
     "react-native": "0.80.2",
+    "react-native-audio-api": "^0.6.5",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "~4.11.1"
   },

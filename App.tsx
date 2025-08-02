@@ -1,9 +1,11 @@
 import * as React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {StyleSheet, View, Text, Button, ScrollView, TextInput} from 'react-native';
+import {StyleSheet, View, Text, Button, ScrollView, TextInput, Alert} from 'react-native';
 import styles from './styles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {AudioContext, AudioBuffer, GainNode, AudioBufferSourceNode} from 'react-native-audio-api';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -15,13 +17,15 @@ const HomeScreen = ({navigation}) => {
       <Button title="Create New Sequence" onPress={()=>{
         navigation.navigate("Edit Sequence")
       }}/>
-      <Button title="View Existing Sequences" onPress={()=>{}}/>
+      <Button title="View Existing Sequences" onPress={()=>{
+        navigation.navigate("View Sequences")
+      }}/>
     </View>
   );
 
 }
 
-const EditSequenceScreen = () => {
+const EditSequenceScreen = ({navigation}) => {
 
   const [sequenceName, setSequenceName] = React.useState(() => {
     const dateObj = new Date();
@@ -38,17 +42,16 @@ const EditSequenceScreen = () => {
   const [bars, setBars] = React.useState<number[]>([]);
 
   const addSection = () => {
-    
     sectionElements.push(
-    <View style={styles.sectionContainer}>
-      <Text>Section {sectionsNo+1}</Text>
-      <Text>Tempo (bpm):</Text>
-      <TextInput keyboardType="numeric" placeholder="120" onChangeText={text => setTempi([...tempi,Number(text)])}/>
-      <Text>Number of Beats per Bar:</Text>
-      <TextInput keyboardType="numeric" placeholder="4" onChangeText={text => setBeatsPerBar([...beatsPerBar,Number(text)])}/>
-      <Text>Number of Bars:</Text>
-      <TextInput keyboardType="numeric" placeholder="8" onChangeText={text => setBars([...bars,Number(text)])}/>
-    </View>
+      <View style={styles.sectionContainer} key={sectionsNo+1}>
+        <Text>Section {sectionsNo+1}</Text>
+        <Text>Tempo (bpm):</Text>
+        <TextInput keyboardType="numeric" placeholder="120" onChangeText={text => setTempi([...tempi,Number(text)])}/>
+        <Text>Number of Beats per Bar:</Text>
+        <TextInput keyboardType="numeric" placeholder="4" onChangeText={text => setBeatsPerBar([...beatsPerBar,Number(text)])}/>
+        <Text>Number of Bars:</Text>
+        <TextInput keyboardType="numeric" placeholder="8" onChangeText={text => setBars([...bars,Number(text)])}/>
+      </View>
     );
     setSectionsNo(sectionsNo + 1);
   };
@@ -70,6 +73,8 @@ const EditSequenceScreen = () => {
       };
       const sequenceJSON = JSON.stringify(SequenceObject);
       await AsyncStorage.setItem(sequenceName, sequenceJSON);
+      Alert.alert("Sequence Saved", sequenceJSON);
+      navigation.navigate("Play Sequence", {sequenceKey: sequenceName});
     }
   }
 
@@ -89,6 +94,65 @@ const EditSequenceScreen = () => {
 
 }
 
+const PlaySequenceScreen = ({route}) => {
+
+  const [sequence, setSequence] = React.useState<any>(null);
+  const [sequenceElements, setSequenceElements] = React.useState<React.ReactElement[]>([]);
+
+  React.useEffect(() => {
+    async function fetchSequence() {
+      const sequenceJSON = await AsyncStorage.getItem(route.params.sequenceKey);
+      if(sequenceJSON) {
+        setSequence(JSON.parse(sequenceJSON));
+      } else {
+        setSequence({"name": "Unknown Sequence", "tempi": [], "beatsPerBar": [], "bars": []});
+      }
+    }
+    fetchSequence();
+    if (sequence?.tempi?.length) {
+      const elements = [];
+      for (let i = 0; i < sequence.tempi.length; i++) {
+      elements.push(
+        <View style={styles.sectionContainer} key={i + 1}>
+        <Text>Section {i + 1}</Text>
+        <Text>Tempo: {sequence.tempi[i]} bpm</Text>
+        <Text>Beats per Bar: {sequence.beatsPerBar[i]}</Text>
+        <Text>Bars: {sequence.bars[i]}</Text>
+        </View>
+      );
+      }
+      setSequenceElements(elements);
+    }
+  },[]);
+
+  const playSequence = async () => {
+    
+  }
+
+  return (
+    <View style={{flex: 1}}>
+      <Text>Sequence Key: {route.params.sequenceKey}</Text>
+      <Text>Sequence Name: {sequence?.name}</Text>
+      <Text>{JSON.stringify(sequence)}</Text>
+      <ScrollView>
+        {sequenceElements}
+      </ScrollView>
+      <Button title="Play Sequence" onPress={playSequence}/>
+    </View>
+  );
+
+}
+
+const ViewSequencesScreen = () => {
+
+  return (
+    <View style={{flex: 1}}>
+      <Text>Existing Sequences:</Text>
+    </View>
+  );
+
+}
+
 const App = () => {
 
   return (
@@ -96,6 +160,8 @@ const App = () => {
       <Stack.Navigator initialRouteName="Home" screenOptions={{headerShown: false}}>
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Edit Sequence" component={EditSequenceScreen} />
+        <Stack.Screen name="Play Sequence" component={PlaySequenceScreen} />
+        <Stack.Screen name="View Sequences" component={ViewSequencesScreen}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
