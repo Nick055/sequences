@@ -40,19 +40,37 @@ const EditSequenceScreen = ({navigation}) => {
   const [tempi, setTempi] = React.useState<number[]>([]);
   const [beatsPerBar, setBeatsPerBar] = React.useState<number[]>([]);
   const [bars, setBars] = React.useState<number[]>([]);
-
+  
   const addSection = () => {
-    sectionElements.push(
-      <View style={styles.sectionContainer} key={sectionsNo+1}>
-        <Text>Section {sectionsNo+1}</Text>
-        <Text>Tempo (bpm):</Text>
-        <TextInput keyboardType="numeric" placeholder="120" onChangeText={text => setTempi([...tempi,Number(text)])}/>
-        <Text>Number of Beats per Bar:</Text>
-        <TextInput keyboardType="numeric" placeholder="4" onChangeText={text => setBeatsPerBar([...beatsPerBar,Number(text)])}/>
-        <Text>Number of Bars:</Text>
-        <TextInput keyboardType="numeric" placeholder="8" onChangeText={text => setBars([...bars,Number(text)])}/>
-      </View>
-    );
+    setSectionElements(prev => [...prev, (
+        <View style={styles.sectionContainer} key={(sectionsNo + 1).toString()}>
+          <Text>Section {sectionsNo + 1}</Text>
+          <Text>Tempo (bpm):</Text>
+          <TextInput inputMode="numeric" placeholder="120" onChangeText={text => {
+            setTempi(prevTempi => {
+              const newTempi = [...prevTempi];
+              newTempi[sectionsNo] = Number(text);
+              return newTempi;
+            });
+            }}/>
+          <Text>Number of Beats per Bar:</Text>
+          <TextInput inputMode="numeric" placeholder="4" onChangeText={text => {
+            setBeatsPerBar(prevBeats => {
+              const newBeats = [...prevBeats];
+              newBeats[sectionsNo] = Number(text);
+              return newBeats;
+            });
+          }}/>
+          <Text>Number of Bars:</Text>
+          <TextInput inputMode="numeric" placeholder="8" onChangeText={text => {
+            setBars(prevBars => {
+              const newBars = [...prevBars];
+              newBars[sectionsNo] = Number(text);
+              return newBars;
+            });
+          }}/>
+        </View>
+      )]);
     setSectionsNo(sectionsNo + 1);
   };
 
@@ -107,22 +125,23 @@ const PlaySequenceScreen = ({route}) => {
       } else {
         setSequence({"name": "Unknown Sequence", "tempi": [], "beatsPerBar": [], "bars": []});
       }
+      const sequenceData = JSON.parse(sequenceJSON || '{"name": "Unknown Sequence", "tempi": [], "beatsPerBar": [], "bars": []}');
+      if (sequenceData.tempi.length > 0) {
+        for (let i = 0; i < sequenceData.tempi.length; i++) {
+          setSequenceElements(prev => [...prev, (
+            <View style={styles.sectionContainer} key={i.toString()}>
+              <Text>Section {i + 1}</Text>
+              <Text>Tempo: {sequenceData.tempi[i]} bpm</Text>
+              <Text>Beats per Bar: {sequenceData.beatsPerBar[i]}</Text>
+              <Text>Bars: {sequenceData.bars[i]}</Text>
+            </View>
+          )]);
+        }
+      } else {
+        setSequenceElements([<Text key={(-1).toString()}>Failed to load sequence elements.</Text>]);
+      }
     }
     fetchSequence();
-    if (sequence?.tempi?.length) {
-      const elements = [];
-      for (let i = 0; i < sequence.tempi.length; i++) {
-      elements.push(
-        <View style={styles.sectionContainer} key={i + 1}>
-        <Text>Section {i + 1}</Text>
-        <Text>Tempo: {sequence.tempi[i]} bpm</Text>
-        <Text>Beats per Bar: {sequence.beatsPerBar[i]}</Text>
-        <Text>Bars: {sequence.bars[i]}</Text>
-        </View>
-      );
-      }
-      setSequenceElements(elements);
-    }
   },[]);
 
   return (
