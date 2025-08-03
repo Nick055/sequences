@@ -154,42 +154,52 @@ const PlaySequenceScreen = ({route}) => {
     if (!sequence || !sequence.tempi || !sequence.beatsPerBar || !sequence.bars) return;
 
     const audioContext = new AudioContext();
-    const audioBuffer = await fetch('https://github.com/Nick055/sequences/assets/beat_lowPitch.wav')
-      .then((response) => response.arrayBuffer())
-      .then((arrayBuffer) => audioContext.decodeAudioData(arrayBuffer));
-    const playerNode = audioContext.createBufferSource();
-    playerNode.buffer = audioBuffer;
-    playerNode.connect(audioContext.destination);
+     const audioBuffer_strongBeat = await fetch('https://github.com/Nick055/sequences/raw/main/assets/beat_lowPitch.mp3')
+      .then((response_strongBeat) => response.arrayBuffer())
+      .then((arrayBuffer_strongBeat) => audioContext.decodeAudioData(arrayBuffer_strongBeat));
+    const audioBuffer_weakBeat = await fetch('https://github.com/Nick055/sequences/raw/main/assets/beat_lowPitch.mp3')
+      .then((response_weakBeat) => response.arrayBuffer())
+      .then((arrayBuffer_weakBeat) => audioContext.decodeAudioData(arrayBuffer_weakBeat));
     
     for (let i = 0; i < sequence.tempi.length; i++) {
       const interval = 60000 / sequence.tempi[i];
       const totalBeats = sequence.beatsPerBar[i] * sequence.bars[i];
 
       // Await the completion of each section before moving to the next
+      let beat = 0;
       await new Promise<void>((resolve) => {
         const startTime = Date.now();
 
-        const playBeat = (beat: number) => {
-          if (beat > totalBeats) {
-            resolve();
-            return;
-          }
-          if (Date.now() - startTime >= interval * beat) {
-            beat % sequence.beatsPerBar[i] === 0 ? setMetronomeColor('#e00') : setMetronomeColor('#0e0');
+        const playBeat = () => {
+          if (Date.now() - startTime >= interval * beat && beat <= totalBeats) {
+            const playerNode = audioContext.createBufferSource();
+            if(beat % sequence.beatsPerBar[i] === 0) {
+              setMetronomeColor('#e00');
+              playerNode.buffer = audioBuffer_strongBeat;
+            } else {
+              setMetronomeColor('#0e0');
+              playerNode.buffer = audioBuffer_weakBeat;
+            } 
+            playerNode.connect(audioContext.destination);
             playerNode.start(audioContext.currentTime);
             setTimeout(() => {
               setMetronomeColor('#040');
               playerNode.stop(audioContext.currentTime + 0.2);
             }, 50);
-            playBeat(beat + 1);
+            beat++;
+            playBeat();
           } else {
-            setTimeout(() => playBeat(beat), 2);
+            setTimeout(playBeat, 1);
+          }
+          if (beat > totalBeats) {
+            resolve();
+            return;
           }
         };
-
-        playBeat(0);
+        playBeat();
       });
     }
+    audioContext.close();
   }
 
   return (
