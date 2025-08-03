@@ -116,6 +116,7 @@ const PlaySequenceScreen = ({route}) => {
   const [sequence, setSequence] = React.useState<any>(null);
   const [sequenceElements, setSequenceElements] = React.useState<React.ReactElement[]>([]);
   const [metronomeColor, setMetronomeColor] = React.useState('#040');
+  const [disableButton, setDisableButton] = React.useState(false);
 
   React.useEffect(() => {
     async function fetchSequence() {
@@ -153,12 +154,14 @@ const PlaySequenceScreen = ({route}) => {
   const playSequence = async () => {
     if (!sequence || !sequence.tempi || !sequence.beatsPerBar || !sequence.bars) return;
 
+    setDisableButton(true);
+
     const audioContext = new AudioContext();
-     const audioBuffer_strongBeat = await fetch('https://github.com/Nick055/sequences/raw/main/assets/beat_lowPitch.mp3')
-      .then((response_strongBeat) => response.arrayBuffer())
+     const audioBuffer_strongBeat = await fetch('https://github.com/Nick055/sequences/raw/main/assets/beat_highPitch.mp3')
+      .then((response_strongBeat) => response_strongBeat.arrayBuffer())
       .then((arrayBuffer_strongBeat) => audioContext.decodeAudioData(arrayBuffer_strongBeat));
     const audioBuffer_weakBeat = await fetch('https://github.com/Nick055/sequences/raw/main/assets/beat_lowPitch.mp3')
-      .then((response_weakBeat) => response.arrayBuffer())
+      .then((response_weakBeat) => response_weakBeat.arrayBuffer())
       .then((arrayBuffer_weakBeat) => audioContext.decodeAudioData(arrayBuffer_weakBeat));
     
     for (let i = 0; i < sequence.tempi.length; i++) {
@@ -200,6 +203,7 @@ const PlaySequenceScreen = ({route}) => {
       });
     }
     audioContext.close();
+    setDisableButton(false);
   }
 
   return (
@@ -212,7 +216,7 @@ const PlaySequenceScreen = ({route}) => {
       <View style={{flexDirection: 'row', alignContent: 'center', justifyContent: 'center'}}>
         <View style={[styles.metronomeIndicator, {backgroundColor: metronomeColor}]}></View>
       </View>
-      <Button title="Play Sequence" onPress={playSequence}/>
+      <Button title="Play Sequence" onPress={playSequence} disabled={disableButton}/>
     </View>
   );
 }
