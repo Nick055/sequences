@@ -6,7 +6,6 @@ import styles from './styles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {AudioContext, AudioBuffer, GainNode, AudioBufferSourceNode} from 'react-native-audio-api';
 
-
 const Stack = createNativeStackNavigator();
 
 const HomeScreen = ({navigation}) => {
@@ -147,8 +146,20 @@ const PlaySequenceScreen = ({route}) => {
     fetchSequence();
   },[]);
 
+  const decodeAudioData = async (context: AudioContext, arrayBuffer: string) => {
+    return await context.decodeAudioData(arrayBuffer);
+  }
+
   const playSequence = async () => {
     if (!sequence || !sequence.tempi || !sequence.beatsPerBar || !sequence.bars) return;
+
+    const audioContext = new AudioContext();
+    const audioBuffer = await fetch('https://github.com/Nick055/sequences/assets/beat_lowPitch.wav')
+      .then((response) => response.arrayBuffer())
+      .then((arrayBuffer) => audioContext.decodeAudioData(arrayBuffer));
+    const playerNode = audioContext.createBufferSource();
+    playerNode.buffer = audioBuffer;
+    playerNode.connect(audioContext.destination);
     
     for (let i = 0; i < sequence.tempi.length; i++) {
       const interval = 60000 / sequence.tempi[i];
@@ -165,8 +176,10 @@ const PlaySequenceScreen = ({route}) => {
           }
           if (Date.now() - startTime >= interval * beat) {
             beat % sequence.beatsPerBar[i] === 0 ? setMetronomeColor('#e00') : setMetronomeColor('#0e0');
+            playerNode.start(audioContext.currentTime);
             setTimeout(() => {
               setMetronomeColor('#040');
+              playerNode.stop(audioContext.currentTime + 0.2);
             }, 50);
             playBeat(beat + 1);
           } else {
