@@ -116,6 +116,7 @@ const PlaySequenceScreen = ({route}) => {
 
   const [sequence, setSequence] = React.useState<any>(null);
   const [sequenceElements, setSequenceElements] = React.useState<React.ReactElement[]>([]);
+  const [metronomeColor, setMetronomeColor] = React.useState('#040');
 
   React.useEffect(() => {
     async function fetchSequence() {
@@ -135,7 +136,7 @@ const PlaySequenceScreen = ({route}) => {
               <Text>Section {i + 1}</Text>
               <Text>Tempo: {sequenceData.tempi[i]} bpm</Text>
               <Text>Beats per Bar: {sequenceData.beatsPerBar[i]}</Text>
-              <Text>Bars: {sequenceData.bars[i]}</Text>
+              <Text>{sequenceData.bars[i]} Bars</Text>
             </View>
           )]);
         }
@@ -146,18 +147,51 @@ const PlaySequenceScreen = ({route}) => {
     fetchSequence();
   },[]);
 
+  const playSequence = async () => {
+    if (!sequence || !sequence.tempi || !sequence.beatsPerBar || !sequence.bars) return;
+    
+    for (let i = 0; i < sequence.tempi.length; i++) {
+      const interval = 60000 / sequence.tempi[i];
+      const totalBeats = sequence.beatsPerBar[i] * sequence.bars[i];
+
+      // Await the completion of each section before moving to the next
+      await new Promise<void>((resolve) => {
+        const startTime = Date.now();
+
+        const playBeat = (beat: number) => {
+          if (beat > totalBeats) {
+            resolve();
+            return;
+          }
+          if (Date.now() - startTime >= interval * beat) {
+            beat % sequence.beatsPerBar[i] === 0 ? setMetronomeColor('#e00') : setMetronomeColor('#0e0');
+            setTimeout(() => {
+              setMetronomeColor('#040');
+            }, 50);
+            playBeat(beat + 1);
+          } else {
+            setTimeout(() => playBeat(beat), 2);
+          }
+        };
+
+        playBeat(0);
+      });
+    }
+  }
+
   return (
     <View style={{flex: 1}}>
-      <Text>Sequence Key: {route.params.sequenceKey}</Text>
+      <Text>Play Sequence</Text>
       <Text>Sequence Name: {sequence?.name}</Text>
-      <Text>{JSON.stringify(sequence)}</Text>
-      <ScrollView>
+      <ScrollView style={{flex: 1}}>
         {sequenceElements}
       </ScrollView>
-      <Button title="Play Sequence" onPress={()=>{}}/>
+      <View style={{flexDirection: 'row', alignContent: 'center', justifyContent: 'center'}}>
+        <View style={[styles.metronomeIndicator, {backgroundColor: metronomeColor}]}></View>
+      </View>
+      <Button title="Play Sequence" onPress={playSequence}/>
     </View>
   );
-
 }
 
 const ViewSequencesScreen = ({navigation}) => {

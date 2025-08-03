@@ -14,5 +14,15 @@ export default StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 5
+    },
+    metronomeIndicator: {
+        margin: 10,
+        width: 50,
+        height: 50,
+        borderRadius: 100,
+        backgroundColor: '#040',
+        border: '2px solid #000',
+        flexDirection: 'row',
+        alignContent: 'center'
     }
 });
