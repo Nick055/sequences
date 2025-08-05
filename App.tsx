@@ -147,17 +147,14 @@ const PlaySequenceScreen = ({route}) => {
     fetchSequence();
   },[]);
 
-  const decodeAudioData = async (context: AudioContext, arrayBuffer: string) => {
-    return await context.decodeAudioData(arrayBuffer);
-  }
-
   const playSequence = async () => {
     if (!sequence || !sequence.tempi || !sequence.beatsPerBar || !sequence.bars) return;
 
     setDisableButton(true);
 
     const audioContext = new AudioContext();
-     const audioBuffer_strongBeat = await fetch('https://github.com/Nick055/sequences/raw/main/assets/beat_highPitch.mp3')
+    
+    const audioBuffer_strongBeat = await fetch('https://github.com/Nick055/sequences/raw/main/assets/beat_highPitch.mp3')
       .then((response_strongBeat) => response_strongBeat.arrayBuffer())
       .then((arrayBuffer_strongBeat) => audioContext.decodeAudioData(arrayBuffer_strongBeat));
     const audioBuffer_weakBeat = await fetch('https://github.com/Nick055/sequences/raw/main/assets/beat_lowPitch.mp3')
@@ -172,7 +169,6 @@ const PlaySequenceScreen = ({route}) => {
       let beat = 0;
       await new Promise<void>((resolve) => {
         const startTime = Date.now();
-
         const playBeat = () => {
           if (Date.now() - startTime >= interval * beat && beat <= totalBeats) {
             const playerNode = audioContext.createBufferSource();
